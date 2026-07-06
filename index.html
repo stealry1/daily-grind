@@ -161,7 +161,10 @@ label.row{cursor:default}
   <!-- DASHBOARD -->
   <section class="screen" id="s-dash">
     <div class="hdr"><span class="title">Dashboard</span>
-      <button class="gear" data-nav="settings" aria-label="Settings"></button></div>
+      <span style="display:flex;gap:2px;align-items:center">
+        <button class="gear" id="dash-share" data-act="share" aria-label="Share"></button>
+        <button class="gear" data-nav="settings" aria-label="Settings"></button>
+      </span></div>
     <div class="seg" id="range-seg" style="margin-bottom:14px"></div>
     <div class="mgrid" id="dash-metrics"></div>
     <div class="sect">Spend</div>
@@ -246,7 +249,8 @@ var SI={
  gear:'<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
  chev:'<path d="M9 6l6 6-6 6"/>',
  store:'<path d="M4 9h16v11H4zM4 9l1.5-5h13L20 9M9 20v-6h6v6"/>',
- check:'<path d="M20 6 9 17l-5-5"/>'
+ check:'<path d="M20 6 9 17l-5-5"/>',
+ share:'<path d="M12 3v13"/><path d="M8.5 6.5 12 3l3.5 3.5"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/>'
 };
 function svg(n,extra){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" '+(extra||'')+'>'+SI[n]+'</svg>';}
 
@@ -327,7 +331,7 @@ function mins2str(m){var h=Math.floor(m/60),mi=m%60;var ap=h<12?'AM':'PM';var h1
 
 /* ---------- rendering ---------- */
 function el(id){return document.getElementById(id);}
-function setGears(){document.querySelectorAll('.gear').forEach(function(g){if(g.id==='gear-done'){g.innerHTML=svg('check');}else{g.innerHTML=svg('gear');}});}
+function setGears(){document.querySelectorAll('.gear').forEach(function(g){g.innerHTML=g.id==='gear-done'?svg('check'):(g.id==='dash-share'?svg('share'):svg('gear'));});}
 
 function renderTabs(){
  var tabs=[['log','Log','coffee'],['dash','Dashboard','chart'],['shops','Shops','pin'],['roi','ROI','calc']];
@@ -574,6 +578,55 @@ function handleAct(a){
  if(a==='export')exportCSV();
  if(a==='wipe'){if(confirm('Erase all coffees stored on this device? Your Google Sheet (if connected) is not affected.')){entries=[];queue=[];shops=[];save(K.entries,entries);save(K.queue,queue);save(K.shops,shops);renderSettings();toast('Local data erased');}}
  if(a==='pickshop')pickShop();
+ if(a==='share')shareDashboard();
+}
+
+/* ---------- share as image (1080x1920 for TikTok/Instagram) ---------- */
+var shareIcon=new Image(); shareIcon.src='icon-512.png';
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function shareDashboard(){
+ var list=entries.filter(function(e){return inRange(e,range);});
+ var a=aggregate(list);
+ var now=new Date();
+ var days=range==='today'?1:(range==='month'?now.getDate():Math.max(1,Math.round((now-new Date(now.getFullYear(),0,1))/86400000)+1));
+ var caffPerDay=days?Math.round(a.caff/days):0;
+ var ts=timeStats(list);
+ var mk=Object.keys(a.byMethod).sort(function(x,y){return a.byMethod[y]-a.byMethod[x];}).slice(0,3);
+ var rangeLabel=range==='today'?'Today':(range==='month'?'This month':'This year');
+ var sub=range==='today'?now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}):(range==='month'?now.toLocaleDateString(undefined,{month:'long',year:'numeric'}):(''+now.getFullYear()));
+ var W=1080,H=1920,cv=document.createElement('canvas');cv.width=W;cv.height=H;var c=cv.getContext('2d');
+ var g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#3a2618');g.addColorStop(1,'#1c120a');c.fillStyle=g;c.fillRect(0,0,W,H);
+ var cream='#f3e7d6',mut='#c3a888',acc='#cf9d72';
+ var FS="-apple-system,'SF Pro Display','Segoe UI',Roboto,sans-serif";
+ // header
+ if(shareIcon.complete&&shareIcon.naturalWidth){rr(c,80,96,132,132,32);c.save();c.clip();c.drawImage(shareIcon,80,96,132,132);c.restore();}
+ c.textAlign='left';c.fillStyle=cream;c.font="600 62px "+FS;c.fillText('Daily Grind',238,158);
+ c.fillStyle=acc;c.font="500 40px "+FS;c.fillText('MY COFFEE'.split('').join(' '),238,210);
+ // range
+ c.textAlign='center';c.fillStyle=acc;c.font="700 58px "+FS;c.fillText(rangeLabel,W/2,360);
+ c.fillStyle=mut;c.font="400 40px "+FS;c.fillText(sub,W/2,418);
+ // hero
+ c.fillStyle=cream;c.font="800 300px "+FS;c.fillText(String(a.count),W/2,660);
+ c.fillStyle=mut;c.font="500 52px "+FS;c.fillText(a.count===1?'coffee':'coffees',W/2,740);
+ // tiles 2x2
+ var tiles=[['Total ounces',Math.round(a.oz).toLocaleString()+' oz'],['Caffeine',caffPerDay.toLocaleString()+' mg/day'],['Spent at shops',fmt$0(a.shopSpend)],['Saved at home',fmt$0(a.saved)]];
+ var TW=440,TH=210,gx=40,x0=80,y0=830;
+ tiles.forEach(function(t,i){var col=i%2,row=Math.floor(i/2);var x=x0+col*(TW+gx),y=y0+row*(TH+gx);c.fillStyle='rgba(243,231,214,0.06)';rr(c,x,y,TW,TH,30);c.fill();c.textAlign='left';c.fillStyle=mut;c.font="500 34px "+FS;c.fillText(t[0],x+36,y+66);c.fillStyle=cream;c.font="700 76px "+FS;c.fillText(t[1],x+36,y+156);});
+ // methods
+ var my=y0+2*TH+2*gx+90;
+ if(mk.length){c.textAlign='left';c.fillStyle=acc;c.font="600 34px "+FS;c.fillText('TOP METHODS',80,my);var yy=my+66;mk.forEach(function(m){var pct=Math.round(a.byMethod[m]/a.count*100);c.fillStyle=cream;c.font="500 44px "+FS;c.textAlign='left';c.fillText(m,80,yy);c.fillStyle=mut;c.textAlign='right';c.fillText(pct+'%',W-80,yy);yy+=68;});}
+ // timing
+ if(ts){var tyy=my+66+3*68+70;c.textAlign='center';c.fillStyle=mut;c.font="500 40px "+FS;c.fillText(ts.earliest+'  ·  '+ts.avg+'  ·  '+ts.latest,W/2,tyy);c.fillStyle=acc;c.font="600 30px "+FS;c.fillText('EARLIEST · AVERAGE · LATEST',W/2,tyy-52);}
+ // footer
+ c.textAlign='center';c.fillStyle=mut;c.font="500 36px "+FS;c.fillText('brewed & tracked with Daily Grind',W/2,H-96);
+ // export + share
+ try{
+  var dataUrl=cv.toDataURL('image/png');
+  var bin=atob(dataUrl.split(',')[1]);var arr=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+  var file=new File([arr],'daily-grind-'+range+'.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'My coffee '+rangeLabel.toLowerCase()}).then(function(){toast('Shared');}).catch(function(){});}
+  else{var url=URL.createObjectURL(file);var link=document.createElement('a');link.href=url;link.download=file.name;link.click();toast('Image saved');}
+ }catch(err){toast('Could not create image');}
 }
 el('log-btn').addEventListener('click',function(){
  if(cur.loc==='Coffee Shop'&&!cur.shop){toast('Pick which shop first');return;}
