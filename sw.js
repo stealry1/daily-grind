@@ -1,5 +1,5 @@
 /* Daily Grind service worker — offline app shell */
-var CACHE = 'daily-grind-v1';
+var CACHE = 'daily-grind-v2';
 var SHELL = [
   './',
   'index.html',

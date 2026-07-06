@@ -113,6 +113,15 @@ input::placeholder{color:var(--muted)}
 .synced{font-size:13px;color:var(--muted);text-align:center;padding:8px}
 a{color:var(--accent)}
 label.row{cursor:default}
+.sheet-backdrop{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.45);display:flex;flex-direction:column;justify-content:flex-end}
+.sheet{padding:0 10px calc(10px + var(--safe-b))}
+.sheet-title{text-align:center;font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;padding:14px 0 8px}
+.sheet-group{background:var(--card);border-radius:14px;overflow-y:auto;max-height:56vh}
+.opt{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 16px;border-top:.5px solid var(--sep);font-size:17px;color:var(--text)}
+.opt:first-child{border-top:none}
+.opt.sel{color:var(--accent);font-weight:600}
+.opt svg{width:20px;height:20px;color:var(--accent);flex-shrink:0}
+.sheet-cancel{width:100%;height:52px;border-radius:14px;background:var(--card);color:var(--accent);border:none;font-size:17px;font-weight:600;margin-top:8px}
 </style>
 </head>
 <body>
@@ -133,16 +142,10 @@ label.row{cursor:default}
     </div>
     <div class="sect">Method</div>
     <div class="chips" id="method-chips"></div>
-    <div class="sect">Coffee</div>
-    <div class="group">
-      <div class="row"><span class="lab">Name</span><span class="val"><input type="text" id="f-coffee" placeholder="Hair Bender" autocomplete="off"></span></div>
-      <div class="row"><span class="lab">Roaster</span><span class="val"><input type="text" id="f-roaster" placeholder="Stumptown" autocomplete="off"></span></div>
-    </div>
-    <div class="sugg" id="coffee-sugg" style="display:none"></div>
     <div class="sect">Details</div>
     <div class="group">
-      <div class="row" data-cycle="origin"><span class="lab">Origin</span><span class="val pick" id="v-origin">Ethiopia<span class="chev" id="c1"></span></span></div>
-      <div class="row" data-cycle="process"><span class="lab">Process</span><span class="val pick" id="v-process">Washed<span class="chev" id="c2"></span></span></div>
+      <div class="row" data-pick="origin"><span class="lab">Origin</span><span class="val pick" id="v-origin">Ethiopia<span class="chev" id="c1"></span></span></div>
+      <div class="row" data-pick="process"><span class="lab">Process</span><span class="val pick" id="v-process">Washed<span class="chev" id="c2"></span></span></div>
     </div>
     <div class="sect">Size (oz)</div>
     <div class="sizes" id="size-btns"></div>
@@ -230,6 +233,7 @@ label.row{cursor:default}
 
 <div class="tabbar" id="tabbar"></div>
 <div class="toast" id="toast"></div>
+<div class="sheet-backdrop" id="picker" style="display:none"><div class="sheet"><div class="sheet-title" id="picker-title">Select</div><div class="sheet-group" id="picker-list"></div><button class="sheet-cancel" id="picker-cancel">Cancel</button></div></div>
 
 <script>
 "use strict";
@@ -453,12 +457,10 @@ function addEntry(){
   date:el('f-date').value||todayStr(), time:el('f-time').value||nowTime(),
   location:cur.loc, shop:cur.loc==='Coffee Shop'?(cur.shop||''):'',
   method:cur.method, origin:cur.origin, process:cur.process,
-  coffee:el('f-coffee').value.trim(), roaster:el('f-roaster').value.trim(),
   sizeOz:cur.size, price:priceFor(cur.loc,cur.method), caffeine:caffeineFor(cur.method,cur.size)
  };
  entries.push(e);save(K.entries,entries);
  queue.push(e);save(K.queue,queue);
- el('f-coffee').value='';el('f-roaster').value='';el('coffee-sugg').style.display='none';
  toast('✓ Logged'+(settings.apiUrl?' — syncing':' locally'));
  updatePreview();
  if(settings.apiUrl)syncNow();
@@ -536,25 +538,21 @@ function sizeGuess(m){return ({'Espresso':2,'Cortado':4,'Cappuccino':6,'Latte':1
 function normDate(s){s=s.trim();var m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);if(m){var y=m[3].length===2?'20'+m[3]:m[3];return y+'-'+p2(+m[1])+'-'+p2(+m[2]);}if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);var d=new Date(s);return isNaN(d)?todayStr():d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());}
 function normTime(s){if(!s)return '12:00';s=s.trim();var m=s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);if(!m)return '12:00';var h=+m[1];if(m[3]){if(/pm/i.test(m[3])&&h<12)h+=12;if(/am/i.test(m[3])&&h===12)h=0;}return p2(h)+':'+m[2];}
 function exportCSV(){
- var hdr=['id','timestamp','date','time','location','shop','method','origin','process','coffee','roaster','size_oz','price','caffeine_mg'];
+ var hdr=['id','timestamp','date','time','location','shop','method','origin','process','size_oz','price','caffeine_mg'];
  var lines=[hdr.join(',')];
- entries.forEach(function(e){lines.push([e.id,e.ts,e.date,e.time,e.location,e.shop,e.method,e.origin,e.process,e.coffee,e.roaster,e.sizeOz,e.price,e.caffeine].map(csvCell).join(','));});
+ entries.forEach(function(e){lines.push([e.id,e.ts,e.date,e.time,e.location,e.shop,e.method,e.origin,e.process,e.sizeOz,e.price,e.caffeine].map(csvCell).join(','));});
  var blob=new Blob([lines.join('\n')],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='daily-grind-export.csv';a.click();
 }
 function csvCell(v){v=(v==null?'':''+v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
 
-/* ---------- coffee autocomplete ---------- */
-function coffeeSuggest(){
- var q=el('f-coffee').value.trim().toLowerCase();var box=el('coffee-sugg');
- if(!q){box.style.display='none';return;}
- var seen={},list=[];
- for(var i=entries.length-1;i>=0;i--){var e=entries[i];if(!e.coffee)continue;var key=(e.coffee+'|'+e.roaster).toLowerCase();
-  if(seen[key])continue;if(e.coffee.toLowerCase().indexOf(q)<0&&(e.roaster||'').toLowerCase().indexOf(q)<0)continue;
-  seen[key]=1;list.push(e);if(list.length>=6)break;}
- if(!list.length){box.style.display='none';return;}
- box.innerHTML=list.map(function(e){return '<div data-c="'+esc(e.coffee)+'" data-r="'+esc(e.roaster||'')+'"><div>'+esc(e.coffee)+'</div>'+(e.roaster?'<div class="r2">'+esc(e.roaster)+'</div>':'')+'</div>';}).join('');
- box.style.display='block';
+/* ---------- origin / process picker ---------- */
+function openPicker(kind){
+ var arr=kind==='origin'?settings.origins:settings.processes;
+ el('picker-title').textContent=kind==='origin'?'Origin':'Process';
+ el('picker-list').innerHTML=arr.map(function(v){var sel=v===cur[kind];return '<div class="opt'+(sel?' sel':'')+'" data-v="'+esc(v)+'"><span>'+esc(v)+'</span>'+(sel?svg('check'):'')+'</div>';}).join('');
+ el('picker').dataset.kind=kind;el('picker').style.display='flex';
 }
+function closePicker(){el('picker').style.display='none';}
 function esc(s){return (s==null?'':''+s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
 /* ---------- events ---------- */
@@ -564,9 +562,10 @@ document.addEventListener('click',function(ev){
  var seg=ev.target.closest('#loc-seg button');if(seg){cur.loc=seg.dataset.loc;document.querySelectorAll('#loc-seg button').forEach(function(b){b.classList.toggle('sel',b===seg);});updatePreview();return;}
  var chip=ev.target.closest('#method-chips .chip');if(chip){cur.method=chip.dataset.m;document.querySelectorAll('#method-chips .chip').forEach(function(b){b.classList.toggle('sel',b===chip);});updatePreview();return;}
  var sb=ev.target.closest('#size-btns .sizebtn');if(sb){cur.size=+sb.dataset.s;el('f-size-custom').value='';document.querySelectorAll('#size-btns .sizebtn').forEach(function(b){b.classList.toggle('sel',b===sb);});updatePreview();return;}
- var cyc=ev.target.closest('[data-cycle]');if(cyc){var k=cyc.dataset.cycle;var arr=k==='origin'?settings.origins:settings.processes;var i=arr.indexOf(cur[k]);cur[k]=arr[(i+1)%arr.length];el('v-'+k).firstChild.textContent=cur[k];return;}
+ var pk=ev.target.closest('[data-pick]');if(pk){openPicker(pk.dataset.pick);return;}
+ var opt=ev.target.closest('#picker-list .opt');if(opt){var kind=el('picker').dataset.kind;cur[kind]=opt.dataset.v;el('v-'+kind).firstChild.textContent=cur[kind];closePicker();return;}
+ if(ev.target.id==='picker'||ev.target.id==='picker-cancel'){closePicker();return;}
  var rseg=ev.target.closest('#range-seg button');if(rseg){range=rseg.dataset.r;renderDash();return;}
- var su=ev.target.closest('#coffee-sugg div');if(su){el('f-coffee').value=su.dataset.c;el('f-roaster').value=su.dataset.r;el('coffee-sugg').style.display='none';return;}
  var act=ev.target.closest('[data-act]');if(act){handleAct(act.dataset.act);return;}
 });
 function handleAct(a){
@@ -583,7 +582,6 @@ el('log-btn').addEventListener('click',function(){
 el('b-today').addEventListener('click',function(e){e.preventDefault();el('f-date').value=todayStr();});
 el('b-now').addEventListener('click',function(e){e.preventDefault();el('f-time').value=nowTime();});
 el('f-size-custom').addEventListener('input',function(){var v=parseFloat(this.value);if(!isNaN(v)){cur.size=v;document.querySelectorAll('#size-btns .sizebtn').forEach(function(b){b.classList.remove('sel');});updatePreview();}});
-el('f-coffee').addEventListener('input',coffeeSuggest);
 el('roi-slider').addEventListener('input',updateROI);
 document.querySelectorAll('#set-api,#set-home').forEach&&0;
 el('csv-file').addEventListener('change',function(){var f=this.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){importCSV(rd.result);};rd.readAsText(f);});
