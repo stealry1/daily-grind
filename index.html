@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Daily Grind</title>
+<meta name="theme-color" content="#a9744f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daily Grind">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="favicon.png">
+<style>
+:root{
+  --bg:#f2f2f7;--card:#ffffff;--card2:#ffffff;--text:#1c1c1e;--text2:#6c6c70;--muted:#8e8e93;
+  --sep:rgba(60,60,67,0.14);--accent:#a9744f;--accentSoft:rgba(169,116,79,0.14);--onAccent:#fff;
+  --tabbar:rgba(248,248,248,0.92);--field:#fff;--danger:#c0392b;--good:#2e7d32;
+  --safe-t:env(safe-area-inset-top);--safe-b:env(safe-area-inset-bottom);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#000;--card:#1c1c1e;--card2:#2c2c2e;--text:#fff;--text2:#aeaeb2;--muted:#8e8e93;
+  --sep:rgba(84,84,88,0.5);--accent:#cb9b73;--accentSoft:rgba(203,155,115,0.22);--onAccent:#1a1206;
+  --tabbar:rgba(28,28,30,0.92);--field:#1c1c1e;--danger:#ff6b5e;--good:#5fd08a;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:17px;line-height:1.4;overscroll-behavior-y:none;-webkit-font-smoothing:antialiased}
+#app{max-width:520px;margin:0 auto;min-height:100%}
+.screen{display:none;padding:0 16px calc(96px + var(--safe-b));min-height:100vh}
+.screen.active{display:block}
+.hdr{position:sticky;top:0;z-index:10;background:var(--bg);padding:calc(8px + var(--safe-t)) 0 6px;
+  display:flex;justify-content:space-between;align-items:flex-end}
+.title{font-size:30px;font-weight:700;letter-spacing:-.5px}
+.gear{width:36px;height:36px;border:none;background:transparent;color:var(--accent);padding:0}
+.gear svg{width:26px;height:26px}
+.sect{font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin:20px 8px 7px}
+.sect:first-of-type{margin-top:8px}
+.group{background:var(--card);border-radius:12px;overflow:hidden;margin-bottom:6px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;
+  padding:9px 16px;border-top:.5px solid var(--sep)}
+.row:first-child{border-top:none}
+.row .lab{color:var(--text);flex-shrink:0}
+.row .val{color:var(--muted);display:flex;align-items:center;gap:6px;text-align:right;min-width:0}
+.row .val.pick{color:var(--accent)}
+.chev{width:18px;height:18px;color:var(--muted);flex-shrink:0}
+input,button,select,textarea{font-family:inherit;font-size:17px}
+input[type=text],input[type=date],input[type=time],input[type=number],input[type=url]{
+  border:none;background:transparent;color:var(--text);text-align:right;width:100%;padding:0}
+input::placeholder{color:var(--muted)}
+.quick{flex-shrink:0;font-size:14px;color:var(--accent);border:1px solid var(--accent);background:transparent;
+  border-radius:15px;padding:5px 12px;margin-left:2px}
+.quick:active{background:var(--accentSoft)}
+.seg{display:flex;background:var(--card2);border-radius:10px;padding:3px;gap:3px}
+@media (prefers-color-scheme:dark){.seg{background:#000}}
+.seg button{flex:1;border:none;background:transparent;border-radius:8px;padding:9px 4px;font-size:14px;color:var(--text2)}
+.seg button.sel{background:var(--card);color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;padding:9px 16px;border-radius:20px;background:var(--card);font-size:15px;color:var(--text);border:none}
+.chip.sel{background:var(--accent);color:var(--onAccent);font-weight:600}
+.sizes{display:flex;gap:8px}
+.sizebtn{flex:1;padding:12px 0;border-radius:10px;background:var(--card);font-size:16px;color:var(--text);border:none}
+.sizebtn.sel{background:var(--accent);color:var(--onAccent);font-weight:600}
+.pv{display:flex;gap:10px;margin:14px 0}
+.pvcard{flex:1;background:var(--card);border-radius:12px;padding:12px 14px}
+.pvcard .l{font-size:13px;color:var(--text2)}
+.pvcard .n{font-size:22px;font-weight:700;margin-top:2px}
+.btn{width:100%;height:52px;border-radius:14px;background:var(--accent);color:var(--onAccent);border:none;
+  font-size:17px;font-weight:600;margin-top:6px}
+.btn:active{opacity:.85}
+.btn.sec{background:var(--card);color:var(--accent)}
+.btn.danger{background:var(--card);color:var(--danger)}
+.toast{position:fixed;left:50%;bottom:calc(90px + var(--safe-b));transform:translateX(-50%);
+  background:#000;color:#fff;padding:11px 18px;border-radius:12px;font-size:15px;opacity:0;
+  transition:opacity .25s;pointer-events:none;z-index:60;max-width:90%}
+.toast.show{opacity:.92}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;
+  background:var(--tabbar);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-top:.5px solid var(--sep);padding-bottom:var(--safe-b)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 4px;
+  color:var(--muted);font-size:10.5px;border:none;background:transparent}
+.tab svg{width:26px;height:26px}
+.tab.active{color:var(--accent)}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.metric{background:var(--card);border-radius:12px;padding:14px}
+.metric .lbl{font-size:13px;color:var(--text2)}
+.metric .num{font-size:25px;font-weight:700;margin-top:3px}
+.metric .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.brow{display:flex;align-items:center;gap:10px;margin:11px 0}
+.brow .bn{width:82px;font-size:14px;color:var(--text2);flex-shrink:0}
+.btrack{flex:1;height:9px;background:var(--accentSoft);border-radius:5px;overflow:hidden}
+.bfill{height:100%;background:var(--accent);border-radius:5px}
+.brow .bp{width:44px;text-align:right;font-size:14px;color:var(--muted)}
+.shopcard{display:flex;align-items:center;gap:12px;min-height:60px;padding:10px 16px;border-top:.5px solid var(--sep)}
+.shopcard:first-child{border-top:none}
+.av{width:40px;height:40px;border-radius:10px;background:var(--accentSoft);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.av svg{width:22px;height:22px}
+.nm{font-weight:600}.mt{font-size:13px;color:var(--muted);margin-top:1px}
+.badge{margin-left:auto;font-size:14px;color:var(--accent);background:var(--accentSoft);padding:4px 11px;border-radius:12px;flex-shrink:0}
+.hint{font-size:14px;color:var(--muted);line-height:1.5;margin:10px 6px;display:flex;gap:8px}
+.hint svg{width:18px;height:18px;flex-shrink:0;margin-top:2px;color:var(--accent)}
+.sugg{background:var(--card);border-radius:12px;margin-top:-2px;overflow:hidden;max-height:220px;overflow-y:auto}
+.sugg div{padding:11px 16px;border-top:.5px solid var(--sep)}
+.sugg div:first-child{border-top:none}
+.sugg .r2{font-size:13px;color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:15px}
+.pill{display:inline-block;font-size:12px;padding:3px 9px;border-radius:10px;background:var(--accentSoft);color:var(--accent)}
+.synced{font-size:13px;color:var(--muted);text-align:center;padding:8px}
+a{color:var(--accent)}
+label.row{cursor:default}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- LOG -->
+  <section class="screen active" id="s-log">
+    <div class="hdr"><span class="title">Log coffee</span>
+      <button class="gear" data-nav="settings" aria-label="Settings" id="gear1"></button></div>
+    <div class="sect">When</div>
+    <div class="group">
+      <div class="row"><span class="lab">Date</span><span class="val"><input type="date" id="f-date"><button class="quick" id="b-today">Today</button></span></div>
+      <div class="row"><span class="lab">Time</span><span class="val"><input type="time" id="f-time"><button class="quick" id="b-now">Now</button></span></div>
+    </div>
+    <div class="sect">Location</div>
+    <div class="seg" id="loc-seg"></div>
+    <div class="group" id="shop-wrap" style="display:none;margin-top:10px">
+      <div class="row" data-act="pickshop"><span class="lab">Which shop?</span><span class="val pick" id="shop-val">Choose…</span></div>
+    </div>
+    <div class="sect">Method</div>
+    <div class="chips" id="method-chips"></div>
+    <div class="sect">Coffee</div>
+    <div class="group">
+      <div class="row"><span class="lab">Name</span><span class="val"><input type="text" id="f-coffee" placeholder="Hair Bender" autocomplete="off"></span></div>
+      <div class="row"><span class="lab">Roaster</span><span class="val"><input type="text" id="f-roaster" placeholder="Stumptown" autocomplete="off"></span></div>
+    </div>
+    <div class="sugg" id="coffee-sugg" style="display:none"></div>
+    <div class="sect">Details</div>
+    <div class="group">
+      <div class="row" data-cycle="origin"><span class="lab">Origin</span><span class="val pick" id="v-origin">Ethiopia<span class="chev" id="c1"></span></span></div>
+      <div class="row" data-cycle="process"><span class="lab">Process</span><span class="val pick" id="v-process">Washed<span class="chev" id="c2"></span></span></div>
+    </div>
+    <div class="sect">Size (oz)</div>
+    <div class="sizes" id="size-btns"></div>
+    <div class="row" style="padding-left:0;padding-right:0"><span class="lab">Custom</span><span class="val"><input type="number" id="f-size-custom" inputmode="decimal" placeholder="oz" style="max-width:90px"></span></div>
+    <div class="pv">
+      <div class="pvcard"><div class="l">Price (auto)</div><div class="n" id="pv-price">$0.60</div></div>
+      <div class="pvcard"><div class="l">Caffeine (auto)</div><div class="n" id="pv-caff">72 mg</div></div>
+    </div>
+    <button class="btn" id="log-btn">Log this coffee</button>
+    <div class="synced" id="sync-status"></div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section class="screen" id="s-dash">
+    <div class="hdr"><span class="title">Dashboard</span>
+      <button class="gear" data-nav="settings" aria-label="Settings"></button></div>
+    <div class="seg" id="range-seg" style="margin-bottom:14px"></div>
+    <div class="mgrid" id="dash-metrics"></div>
+    <div class="sect">Spend</div>
+    <div class="group" id="dash-spend" style="padding:6px 14px"></div>
+    <div class="sect">By method</div>
+    <div class="group" id="dash-methods" style="padding:8px 14px"></div>
+    <div class="sect">Timing &amp; pace</div>
+    <div class="group" id="dash-timing"></div>
+  </section>
+
+  <!-- SHOPS -->
+  <section class="screen" id="s-shops">
+    <div class="hdr"><span class="title">Coffee shops</span>
+      <button class="gear" data-nav="settings" aria-label="Settings"></button></div>
+    <button class="btn sec" id="find-shop" style="margin:6px 0 4px">Find shops near me</button>
+    <div class="sect" id="shops-count">Your shops</div>
+    <div class="group" id="shop-list"></div>
+    <div class="hint" id="shops-hint"></div>
+  </section>
+
+  <!-- ROI -->
+  <section class="screen" id="s-roi">
+    <div class="hdr"><span class="title">ROI calculator</span>
+      <button class="gear" data-nav="settings" aria-label="Settings"></button></div>
+    <div class="sect">Machine price</div>
+    <div class="group" style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+        <span class="lab">Espresso machine + grinder</span><span class="title" style="font-size:22px" id="roi-price">$700</span></div>
+      <input type="range" min="100" max="4000" step="10" value="700" id="roi-slider" style="width:100%;accent-color:var(--accent)">
+    </div>
+    <div class="pv">
+      <div class="pvcard"><div class="l">Pays for itself in</div><div class="n" id="roi-months" style="color:var(--accent)">—</div></div>
+      <div class="pvcard"><div class="l">First-year net</div><div class="n" id="roi-year">—</div></div>
+    </div>
+    <div class="sect">From your data</div>
+    <div class="group" id="roi-data"></div>
+    <div class="hint"><span id="roi-note"></span></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="screen" id="s-settings">
+    <div class="hdr"><span class="title">Settings</span>
+      <button class="gear" data-nav="log" aria-label="Done" id="gear-done" style="color:var(--accent);font-weight:600"></button></div>
+    <div class="sect">Google Sheet sync</div>
+    <div class="group">
+      <div class="row"><span class="lab">Sheet API URL</span><span class="val"><input type="url" id="set-api" placeholder="Paste after setup"></span></div>
+      <div class="row" data-act="savesync"><span class="lab" style="color:var(--accent)">Save &amp; sync now</span><span class="val pick" id="sync-info"></span></div>
+      <div class="row" data-act="loadsheet"><span class="lab" style="color:var(--accent)">Load from sheet</span><span class="chev" id="cev2"></span></div>
+    </div>
+    <div class="sect">Shop average price by drink ($)</div>
+    <div class="group" id="set-shop-prices"></div>
+    <div class="sect">Home average price by drink ($)</div>
+    <div class="group" id="set-home-prices"></div>
+    <div class="sect">Caffeine mg per oz by method</div>
+    <div class="group" id="set-caff"></div>
+    <div class="sect">Import 2026 data</div>
+    <div class="group">
+      <label class="row" for="csv-file"><span class="lab" style="color:var(--accent)">Import from CSV…</span><span class="val" id="import-info">Numbers → export CSV</span></label>
+      <input type="file" id="csv-file" accept=".csv,text/csv" style="display:none">
+    </div>
+    <div class="sect">Data</div>
+    <div class="group">
+      <div class="row" data-act="export"><span class="lab" style="color:var(--accent)">Export my data (CSV)</span><span class="chev" id="cev"></span></div>
+      <div class="row" data-act="wipe"><span class="lab" style="color:var(--danger)">Erase all local data</span></div>
+    </div>
+    <div class="synced" id="set-count"></div>
+  </section>
+</div>
+
+<div class="tabbar" id="tabbar"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ---------- icons (inline SVG, offline-safe) ---------- */
+var SI={
+ coffee:'<path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z"/><path d="M17 9h2a3 3 0 0 1 0 6h-2"/><path d="M6 2c0 1 .8 1.5.8 2.5S6 6 6 7"/><path d="M10 2c0 1 .8 1.5.8 2.5S10 6 10 7"/>',
+ chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+ pin:'<path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/>',
+ calc:'<rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M8 6.5h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h4"/>',
+ gear:'<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+ chev:'<path d="M9 6l6 6-6 6"/>',
+ store:'<path d="M4 9h16v11H4zM4 9l1.5-5h13L20 9M9 20v-6h6v6"/>',
+ check:'<path d="M20 6 9 17l-5-5"/>'
+};
+function svg(n,extra){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" '+(extra||'')+'>'+SI[n]+'</svg>';}
+
+/* ---------- defaults / state ---------- */
+var LOCATIONS=['Home','Coffee Shop','Hotel','Other'];
+var DEF={
+ methods:['Espresso','Drip','Pour Over','Iced/Cold Brew','Latte','Cortado','Americano','Cappuccino'],
+ origins:['Blend','Brazil','Burundi','Colombia','Costa Rica','Ecuador','El Salvador','Ethiopia','Guatemala','Honduras','Kenya','Panama','Papua New Guinea','Peru'],
+ processes:['Washed','Natural','Anaerobic','Honey'],
+ caffPerOz:{'Espresso':64,'Drip':12,'Pour Over':13,'Iced/Cold Brew':18,'Latte':6,'Cortado':20,'Americano':12,'Cappuccino':10},
+ shopPrice:{'Espresso':3.25,'Drip':3.00,'Pour Over':6.50,'Iced/Cold Brew':4.00,'Latte':4.50,'Cortado':3.75,'Americano':3.25,'Cappuccino':4.50},
+ homePrice:{'Espresso':0.95,'Drip':1.16,'Pour Over':1.16,'Iced/Cold Brew':1.06,'Latte':1.45,'Cortado':1.15,'Americano':0.95,'Cappuccino':1.20},
+ sizes:[2,8,12,16],
+ homeCost:1.10
+};
+var K={entries:'dg_entries',settings:'dg_settings',shops:'dg_shops',queue:'dg_queue'};
+function load(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v));}
+var settings=Object.assign({apiUrl:'',homeCost:DEF.homeCost,caffPerOz:{},shopPrice:{},homePrice:{},methods:DEF.methods.slice(),origins:DEF.origins.slice(),processes:DEF.processes.slice()},load(K.settings,{}));
+if(!settings.homePrice)settings.homePrice={};
+DEF.methods.forEach(function(m){if(settings.caffPerOz[m]==null)settings.caffPerOz[m]=DEF.caffPerOz[m];if(settings.shopPrice[m]==null)settings.shopPrice[m]=DEF.shopPrice[m];if(settings.homePrice[m]==null)settings.homePrice[m]=DEF.homePrice[m];});
+var entries=load(K.entries,[]);
+var shops=load(K.shops,[]);
+var queue=load(K.queue,[]);
+
+/* ---------- current log form state ---------- */
+var cur={loc:'Home',method:settings.methods[0],origin:'Ethiopia',process:'Washed',size:12,shop:null};
+
+/* ---------- pure calc functions ---------- */
+function caffeineFor(method,oz){var per=settings.caffPerOz[method]||0;return Math.round(per*oz);}
+function priceFor(loc,method){if(loc==='Home')return round2(settings.homePrice[method]!=null?settings.homePrice[method]:settings.homeCost);if(loc==='Coffee Shop')return round2(settings.shopPrice[method]||0);return 0;}
+function round2(n){return Math.round((n+Number.EPSILON)*100)/100;}
+function fmt$(n){return '$'+(Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmt$0(n){return '$'+Math.round(n).toLocaleString();}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());}
+function nowTime(){var d=new Date();return p2(d.getHours())+':'+p2(d.getMinutes());}
+function p2(n){return (n<10?'0':'')+n;}
+
+function inRange(e,range){
+ var now=new Date();var d=new Date(e.ts||(e.date+'T'+(e.time||'12:00')));
+ if(range==='today')return d.toDateString()===now.toDateString();
+ if(range==='month')return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+ if(range==='year')return d.getFullYear()===now.getFullYear();
+ return true;
+}
+function aggregate(list){
+ var a={count:list.length,oz:0,caff:0,shopSpend:0,homeSpend:0,saved:0,byMethod:{},times:[]};
+ list.forEach(function(e){
+  a.oz+=(+e.sizeOz||0);
+  a.caff+=(+e.caffeine||0);
+  if(e.location==='Coffee Shop')a.shopSpend+=(+e.price||0);
+  else if(e.location==='Home'){a.homeSpend+=(+e.price||0);
+    var sp=settings.shopPrice[e.method]||0;a.saved+=Math.max(0,sp-(+e.price||0));}
+  a.byMethod[e.method]=(a.byMethod[e.method]||0)+1;
+  if(e.time){var pp=e.time.split(':');a.times.push((+pp[0])*60+(+pp[1]));}
+ });
+ return a;
+}
+function paceStats(){
+ var yr=new Date().getFullYear();
+ var list=entries.filter(function(e){return new Date(e.ts||e.date).getFullYear()===yr;});
+ if(!list.length)return null;
+ var start=new Date(yr,0,1),now=new Date();
+ var days=Math.max(1,Math.round((now-start)/86400000)+1);
+ var perDay=list.length/days;
+ var diy=((yr%4===0&&yr%100!==0)||yr%400===0)?366:365;
+ var ag=aggregate(list);
+ var spendPerDay=(ag.shopSpend+ag.homeSpend)/days;
+ return {perDay:perDay,projDrinks:Math.round(perDay*diy),projSpend:spendPerDay*diy,days:days,count:list.length};
+}
+function timeStats(list){
+ var t=aggregate(list).times;if(!t.length)return null;
+ t.sort(function(x,y){return x-y;});
+ var avg=Math.round(t.reduce(function(s,v){return s+v;},0)/t.length);
+ return {earliest:mins2str(t[0]),latest:mins2str(t[t.length-1]),avg:mins2str(avg)};
+}
+function mins2str(m){var h=Math.floor(m/60),mi=m%60;var ap=h<12?'AM':'PM';var h12=h%12;if(h12===0)h12=12;return h12+':'+p2(mi)+' '+ap;}
+
+/* ---------- rendering ---------- */
+function el(id){return document.getElementById(id);}
+function setGears(){document.querySelectorAll('.gear').forEach(function(g){if(g.id==='gear-done'){g.innerHTML=svg('check');}else{g.innerHTML=svg('gear');}});}
+
+function renderTabs(){
+ var tabs=[['log','Log','coffee'],['dash','Dashboard','chart'],['shops','Shops','pin'],['roi','ROI','calc']];
+ el('tabbar').innerHTML=tabs.map(function(t){return '<button class="tab" data-nav="'+t[0]+'">'+svg(t[2])+'<span>'+t[1]+'</span></button>';}).join('');
+ document.querySelectorAll('.chev').forEach(function(c){c.innerHTML=svg('chev');});
+}
+function nav(name){
+ document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('active',s.id==='s-'+name);});
+ document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.nav===name);});
+ window.scrollTo(0,0);
+ if(name==='dash')renderDash();
+ if(name==='shops')renderShops();
+ if(name==='roi')renderROI();
+ if(name==='settings')renderSettings();
+ if(name==='log')updatePreview();
+}
+
+/* LOG screen */
+function renderLog(){
+ el('loc-seg').innerHTML=LOCATIONS.map(function(l){return '<button data-loc="'+l+'"'+(l===cur.loc?' class="sel"':'')+'>'+(l==='Coffee Shop'?'Coffee shop':l)+'</button>';}).join('');
+ el('method-chips').innerHTML=settings.methods.map(function(m){return '<button class="chip'+(m===cur.method?' sel':'')+'" data-m="'+m+'">'+m+'</button>';}).join('');
+ el('size-btns').innerHTML=DEF.sizes.map(function(s){return '<button class="sizebtn'+(s===cur.size?' sel':'')+'" data-s="'+s+'">'+s+'</button>';}).join('');
+ el('v-origin').firstChild.textContent=cur.origin; el('v-process').firstChild.textContent=cur.process;
+ el('f-date').value=el('f-date').value||todayStr();
+ el('f-time').value=el('f-time').value||nowTime();
+ updatePreview();
+}
+function updatePreview(){
+ el('pv-price').textContent=fmt$(priceFor(cur.loc,cur.method));
+ el('pv-caff').textContent=caffeineFor(cur.method,cur.size)+' mg';
+ el('shop-wrap').style.display=cur.loc==='Coffee Shop'?'block':'none';
+ el('sync-status').textContent=queue.length?(queue.length+' entr'+(queue.length>1?'ies':'y')+' waiting to sync'):(settings.apiUrl?'All synced':'Local mode — add Sheet in Settings to sync');
+}
+
+/* DASHBOARD */
+var range='month';
+function renderDash(){
+ el('range-seg').innerHTML=[['today','Today'],['month','Month'],['year','Year']].map(function(r){return '<button data-r="'+r[0]+'"'+(r[0]===range?' class="sel"':'')+'>'+r[1]+'</button>';}).join('');
+ var list=entries.filter(function(e){return inRange(e,range);});
+ var a=aggregate(list);
+ var perDayLabel=range==='today'?'today':(range==='month'?'this month':'this year');
+ var days=range==='today'?1:(range==='month'?new Date().getDate():Math.max(1,Math.round((new Date()-new Date(new Date().getFullYear(),0,1))/86400000)+1));
+ var caffPerDay=days?Math.round(a.caff/days):0;
+ el('dash-metrics').innerHTML=[
+  ['Coffees',a.count,perDayLabel],
+  ['Total ounces',Math.round(a.oz).toLocaleString(),'oz brewed'],
+  ['Caffeine',caffPerDay.toLocaleString(),'mg / day avg'],
+  ['Saved vs shop',fmt$0(a.saved),'brewing at home']
+ ].map(function(m){return '<div class="metric"><div class="lbl">'+m[0]+'</div><div class="num">'+m[1]+'</div><div class="sub">'+m[2]+'</div></div>';}).join('');
+ var tot=a.shopSpend+a.homeSpend||1;
+ el('dash-spend').innerHTML=
+  bar('Coffee shop',a.shopSpend/tot*100,fmt$0(a.shopSpend))+
+  bar('Home',a.homeSpend/tot*100,fmt$0(a.homeSpend));
+ var mk=Object.keys(a.byMethod).sort(function(x,y){return a.byMethod[y]-a.byMethod[x];});
+ el('dash-methods').innerHTML=mk.length?mk.map(function(m){var pct=Math.round(a.byMethod[m]/a.count*100);return bar(m,pct,pct+'%');}).join(''):'<div class="empty" style="padding:16px">No coffees yet</div>';
+ var ts=timeStats(list),pace=paceStats();
+ var rows='';
+ if(ts){rows+=drow('Earliest',ts.earliest)+drow('Latest',ts.latest)+drow('Average time',ts.avg);}
+ if(pace&&range==='year'){rows+=drow('Projected drinks',pace.projDrinks.toLocaleString())+drow('Projected spend',fmt$0(pace.projSpend));}
+ el('dash-timing').innerHTML=rows||'<div class="empty" style="padding:16px">Log coffees to see timing</div>';
+ if(!entries.length)el('dash-metrics').insertAdjacentHTML('beforebegin','');
+}
+function bar(name,pct,right){return '<div class="brow"><span class="bn">'+name+'</span><div class="btrack"><div class="bfill" style="width:'+Math.max(2,Math.min(100,pct))+'%"></div></div><span class="bp">'+right+'</span></div>';}
+function drow(l,v){return '<div class="row"><span class="lab">'+l+'</span><span class="val">'+v+'</span></div>';}
+
+/* SHOPS */
+function renderShops(){
+ var counts={};entries.forEach(function(e){if(e.location==='Coffee Shop'&&e.shop){counts[e.shop]=(counts[e.shop]||0)+1;}});
+ var names=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+ shops.forEach(function(s){if(names.indexOf(s.name)<0)names.push(s.name);});
+ el('shops-count').textContent=names.length?(names.length+' shop'+(names.length>1?'s':'')):'Your shops';
+ if(!names.length){el('shop-list').innerHTML='<div class="empty">No shops yet.<br>Log a coffee at a coffee shop, or tap "Find shops near me".</div>';}
+ else{el('shop-list').innerHTML=names.map(function(n){var s=shops.filter(function(x){return x.name===n;})[0]||{};var meta=[s.city,s.state].filter(Boolean).join(', ');if(s.website)meta+=(meta?' · ':'')+s.website;return '<div class="shopcard"><div class="av">'+svg('store')+'</div><div><div class="nm">'+esc(n)+'</div><div class="mt">'+(esc(meta)||'Tap to add details')+'</div></div><span class="badge">'+(counts[n]||0)+'×</span></div>';}).join('');}
+ el('shops-hint').innerHTML=svg('pin')+'<span>When you pick "Coffee shop" while logging, the app suggests the nearest of these (or add a new one). Visit counts update automatically.</span>';
+}
+
+/* ROI */
+function renderROI(){
+ var yr=new Date().getFullYear();
+ var ylist=entries.filter(function(e){return new Date(e.ts||e.date).getFullYear()===yr;});
+ var homeList=ylist.filter(function(e){return e.location==='Home';});
+ var shopList=ylist.filter(function(e){return e.location==='Coffee Shop';});
+ var avgShop=shopList.length?shopList.reduce(function(s,e){return s+(+e.price||0);},0)/shopList.length:avgObj(settings.shopPrice);
+ var homeCost=homeList.length?homeList.reduce(function(s,e){return s+(+e.price||0);},0)/homeList.length:(avgObj(settings.homePrice)||settings.homeCost);
+ var start=new Date(yr,0,1),now=new Date();var days=Math.max(1,Math.round((now-start)/86400000)+1);
+ var homePerDay=homeList.length? homeList.length/days : 1.5;
+ window._roi={avgShop:avgShop,homeCost:homeCost,homePerDay:homePerDay,save:Math.max(0,avgShop-homeCost)};
+ el('roi-data').innerHTML=drow('Avg shop price',fmt$(avgShop)+' / cup')+drow('Home cost',fmt$(homeCost)+' / cup')+drow('You brew at home','~'+(Math.round(homePerDay*10)/10)+' / day')+'<div class="row"><span class="lab">Saved per home cup</span><span class="val pick">'+fmt$(window._roi.save)+'</span></div>';
+ el('roi-note').textContent='Payback = machine price ÷ your daily home-brew savings ('+fmt$(window._roi.save)+' × '+(Math.round(homePerDay*10)/10)+'/day = '+fmt$(window._roi.save*homePerDay)+'/day), using your real logged data.';
+ updateROI();
+}
+function avgObj(o){var k=Object.keys(o);if(!k.length)return 0;return k.reduce(function(s,x){return s+o[x];},0)/k.length;}
+function updateROI(){
+ var price=+el('roi-slider').value;var r=window._roi||{save:4.5,homePerDay:1.5};
+ var daily=r.save*r.homePerDay;
+ var months=daily>0?price/daily/30.44:0;
+ var yearNet=daily*365-price;
+ el('roi-price').textContent=fmt$0(price);
+ el('roi-months').textContent=daily>0?(Math.round(months*10)/10)+' mo':'—';
+ var y=el('roi-year');y.textContent=(yearNet>=0?'+':'−')+fmt$0(Math.abs(yearNet));
+ y.style.color=yearNet>=0?'var(--good)':'var(--danger)';
+}
+
+/* SETTINGS */
+function renderSettings(){
+ el('set-api').value=settings.apiUrl||'';
+ el('set-shop-prices').innerHTML=settings.methods.map(function(m){return '<div class="row"><span class="lab">'+m+'</span><span class="val">$<input type="number" step="0.01" inputmode="decimal" data-sp="'+m+'" value="'+(settings.shopPrice[m]||0)+'" style="max-width:80px"></span></div>';}).join('');
+ el('set-home-prices').innerHTML=settings.methods.map(function(m){return '<div class="row"><span class="lab">'+m+'</span><span class="val">$<input type="number" step="0.01" inputmode="decimal" data-hp="'+m+'" value="'+(settings.homePrice[m]||0)+'" style="max-width:80px"></span></div>';}).join('');
+ el('set-caff').innerHTML=settings.methods.map(function(m){return '<div class="row"><span class="lab">'+m+'</span><span class="val"><input type="number" step="1" inputmode="numeric" data-cf="'+m+'" value="'+(settings.caffPerOz[m]||0)+'" style="max-width:70px"> mg</span></div>';}).join('');
+ el('set-count').textContent=entries.length+' coffees stored'+(queue.length?' · '+queue.length+' waiting to sync':'');
+ el('sync-info').textContent=settings.apiUrl?'Connected':'Not connected';
+}
+function persistSettings(){
+ settings.apiUrl=el('set-api').value.trim();
+ document.querySelectorAll('[data-sp]').forEach(function(i){settings.shopPrice[i.dataset.sp]=+i.value||0;});
+ document.querySelectorAll('[data-hp]').forEach(function(i){settings.homePrice[i.dataset.hp]=+i.value||0;});
+ document.querySelectorAll('[data-cf]').forEach(function(i){settings.caffPerOz[i.dataset.cf]=+i.value||0;});
+ settings.homeCost=avgObj(settings.homePrice)||settings.homeCost;
+ save(K.settings,settings);
+}
+
+/* ---------- add / sync ---------- */
+function addEntry(){
+ var e={
+  id:'e'+Date.now()+Math.floor(Math.random()*1000),
+  ts:(el('f-date').value||todayStr())+'T'+(el('f-time').value||'12:00'),
+  date:el('f-date').value||todayStr(), time:el('f-time').value||nowTime(),
+  location:cur.loc, shop:cur.loc==='Coffee Shop'?(cur.shop||''):'',
+  method:cur.method, origin:cur.origin, process:cur.process,
+  coffee:el('f-coffee').value.trim(), roaster:el('f-roaster').value.trim(),
+  sizeOz:cur.size, price:priceFor(cur.loc,cur.method), caffeine:caffeineFor(cur.method,cur.size)
+ };
+ entries.push(e);save(K.entries,entries);
+ queue.push(e);save(K.queue,queue);
+ el('f-coffee').value='';el('f-roaster').value='';el('coffee-sugg').style.display='none';
+ toast('✓ Logged'+(settings.apiUrl?' — syncing':' locally'));
+ updatePreview();
+ if(settings.apiUrl)syncNow();
+}
+function syncNow(cb){
+ if(!settings.apiUrl){if(cb)cb();return;}
+ if(!queue.length){if(cb)cb(true);updatePreview();return;}
+ var batch=queue.slice();
+ fetch(settings.apiUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({type:'bulk',entries:batch})})
+ .then(function(r){return r.json();})
+ .then(function(res){
+   if(res&&res.ok){queue=queue.filter(function(q){return batch.indexOf(q)<0;});save(K.queue,queue);toast('Synced '+batch.length+' to your sheet');}
+   else toast('Sync failed — will retry');
+   updatePreview();renderSettings&&(el('s-settings').classList.contains('active')&&renderSettings());
+   if(cb)cb(true);
+ }).catch(function(){toast('Offline — queued for later');if(cb)cb(false);});
+}
+
+function pullFromSheet(){
+ if(!settings.apiUrl){toast('Add your Sheet API URL first');return;}
+ toast('Loading from sheet…');
+ fetch(settings.apiUrl,{method:'GET'}).then(function(r){return r.json();}).then(function(res){
+  if(!res||!res.ok){toast('Could not read sheet');return;}
+  var have={};entries.forEach(function(e){have[e.id]=1;});
+  var added=0;(res.entries||[]).forEach(function(e){if(e.id&&!have[e.id]){entries.push(e);have[e.id]=1;added++;}});
+  entries.sort(function(a,b){return (a.ts||'').localeCompare(b.ts||'');});
+  save(K.entries,entries);renderSettings();
+  toast(added?('Loaded '+added+' from sheet'):'Already up to date');
+ }).catch(function(){toast('Offline — could not load');});
+}
+
+/* ---------- CSV import/export ---------- */
+function parseCSV(text){
+ var rows=[],cur=[],val='',q=false;
+ for(var i=0;i<text.length;i++){var c=text[i];
+  if(q){if(c==='"'){if(text[i+1]==='"'){val+='"';i++;}else q=false;}else val+=c;}
+  else{if(c==='"')q=true;else if(c===','){cur.push(val);val='';}else if(c==='\n'){cur.push(val);rows.push(cur);cur=[];val='';}else if(c==='\r'){}else val+=c;}
+ }
+ if(val!==''||cur.length){cur.push(val);rows.push(cur);}
+ return rows.filter(function(r){return r.some(function(x){return x!=='';});});
+}
+function importCSV(text){
+ var rows=parseCSV(text);if(rows.length<2){toast('No rows found');return;}
+ var hdr=rows[0].map(function(h){return h.trim().toLowerCase();});
+ function col(){for(var a=0;a<arguments.length;a++){var i=hdr.indexOf(arguments[a]);if(i>=0)return i;}return -1;}
+ var ci={date:col('date'),time:col('time'),loc:col('location'),shop:col('shop','coffee shop','coffee shop drink'),method:col('method','drink'),origin:col('origin'),process:col('process'),size:col('size (oz)','size','oz','ounces'),price:col('price','cost'),coffee:col('coffee','name'),roaster:col('roaster')};
+ var added=0;
+ rows.slice(1).forEach(function(r){
+  var date=ci.date>=0?(r[ci.date]||'').trim():'';if(!date)return;
+  var d=normDate(date);var method=ci.method>=0?(r[ci.method]||'').trim():'';var loc=ci.loc>=0?(r[ci.loc]||'').trim():'Home';
+  if(loc==='Starbucks'){loc='Coffee Shop';}
+  if(LOCATIONS.indexOf(loc)<0&&loc)loc=(loc.toLowerCase().indexOf('shop')>=0?'Coffee Shop':(loc==='Hotel'?'Hotel':'Other'));
+  var size=ci.size>=0?parseFloat(r[ci.size])||sizeGuess(method):sizeGuess(method);
+  var price=ci.price>=0&&r[ci.price]!==''?parseFloat((r[ci.price]||'').replace(/[^0-9.\-]/g,'')):priceFor(loc,method);
+  var e={id:'i'+added+'_'+Date.now(),ts:d+'T'+(ci.time>=0?normTime(r[ci.time]):'12:00'),date:d,time:ci.time>=0?normTime(r[ci.time]):'',
+   location:loc,shop:ci.shop>=0?(r[ci.shop]||'').trim():'',method:method,origin:ci.origin>=0?(r[ci.origin]||'').trim():'',
+   process:ci.process>=0?(r[ci.process]||'').trim():'',coffee:ci.coffee>=0?(r[ci.coffee]||'').trim():'',roaster:ci.roaster>=0?(r[ci.roaster]||'').trim():'',
+   sizeOz:size,price:isNaN(price)?priceFor(loc,method):round2(price),caffeine:caffeineFor(method,size)};
+  entries.push(e);queue.push(e);added++;
+ });
+ save(K.entries,entries);save(K.queue,queue);
+ toast('Imported '+added+' coffees');renderSettings();
+ if(settings.apiUrl)syncNow();
+}
+function sizeGuess(m){return ({'Espresso':2,'Cortado':4,'Cappuccino':6,'Latte':12,'Drip':12,'Pour Over':12,'Americano':12,'Iced/Cold Brew':16})[m]||8;}
+function normDate(s){s=s.trim();var m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);if(m){var y=m[3].length===2?'20'+m[3]:m[3];return y+'-'+p2(+m[1])+'-'+p2(+m[2]);}if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);var d=new Date(s);return isNaN(d)?todayStr():d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());}
+function normTime(s){if(!s)return '12:00';s=s.trim();var m=s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);if(!m)return '12:00';var h=+m[1];if(m[3]){if(/pm/i.test(m[3])&&h<12)h+=12;if(/am/i.test(m[3])&&h===12)h=0;}return p2(h)+':'+m[2];}
+function exportCSV(){
+ var hdr=['id','timestamp','date','time','location','shop','method','origin','process','coffee','roaster','size_oz','price','caffeine_mg'];
+ var lines=[hdr.join(',')];
+ entries.forEach(function(e){lines.push([e.id,e.ts,e.date,e.time,e.location,e.shop,e.method,e.origin,e.process,e.coffee,e.roaster,e.sizeOz,e.price,e.caffeine].map(csvCell).join(','));});
+ var blob=new Blob([lines.join('\n')],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='daily-grind-export.csv';a.click();
+}
+function csvCell(v){v=(v==null?'':''+v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+
+/* ---------- coffee autocomplete ---------- */
+function coffeeSuggest(){
+ var q=el('f-coffee').value.trim().toLowerCase();var box=el('coffee-sugg');
+ if(!q){box.style.display='none';return;}
+ var seen={},list=[];
+ for(var i=entries.length-1;i>=0;i--){var e=entries[i];if(!e.coffee)continue;var key=(e.coffee+'|'+e.roaster).toLowerCase();
+  if(seen[key])continue;if(e.coffee.toLowerCase().indexOf(q)<0&&(e.roaster||'').toLowerCase().indexOf(q)<0)continue;
+  seen[key]=1;list.push(e);if(list.length>=6)break;}
+ if(!list.length){box.style.display='none';return;}
+ box.innerHTML=list.map(function(e){return '<div data-c="'+esc(e.coffee)+'" data-r="'+esc(e.roaster||'')+'"><div>'+esc(e.coffee)+'</div>'+(e.roaster?'<div class="r2">'+esc(e.roaster)+'</div>':'')+'</div>';}).join('');
+ box.style.display='block';
+}
+function esc(s){return (s==null?'':''+s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+/* ---------- events ---------- */
+function toast(m){var t=el('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},1900);}
+document.addEventListener('click',function(ev){
+ var n=ev.target.closest('[data-nav]');if(n){nav(n.dataset.nav);return;}
+ var seg=ev.target.closest('#loc-seg button');if(seg){cur.loc=seg.dataset.loc;document.querySelectorAll('#loc-seg button').forEach(function(b){b.classList.toggle('sel',b===seg);});updatePreview();return;}
+ var chip=ev.target.closest('#method-chips .chip');if(chip){cur.method=chip.dataset.m;document.querySelectorAll('#method-chips .chip').forEach(function(b){b.classList.toggle('sel',b===chip);});updatePreview();return;}
+ var sb=ev.target.closest('#size-btns .sizebtn');if(sb){cur.size=+sb.dataset.s;el('f-size-custom').value='';document.querySelectorAll('#size-btns .sizebtn').forEach(function(b){b.classList.toggle('sel',b===sb);});updatePreview();return;}
+ var cyc=ev.target.closest('[data-cycle]');if(cyc){var k=cyc.dataset.cycle;var arr=k==='origin'?settings.origins:settings.processes;var i=arr.indexOf(cur[k]);cur[k]=arr[(i+1)%arr.length];el('v-'+k).firstChild.textContent=cur[k];return;}
+ var rseg=ev.target.closest('#range-seg button');if(rseg){range=rseg.dataset.r;renderDash();return;}
+ var su=ev.target.closest('#coffee-sugg div');if(su){el('f-coffee').value=su.dataset.c;el('f-roaster').value=su.dataset.r;el('coffee-sugg').style.display='none';return;}
+ var act=ev.target.closest('[data-act]');if(act){handleAct(act.dataset.act);return;}
+});
+function handleAct(a){
+ if(a==='savesync'){persistSettings();renderSettings();toast(settings.apiUrl?'Saved — syncing':'Saved');if(settings.apiUrl)syncNow();}
+ if(a==='loadsheet')pullFromSheet();
+ if(a==='export')exportCSV();
+ if(a==='wipe'){if(confirm('Erase all coffees stored on this device? Your Google Sheet (if connected) is not affected.')){entries=[];queue=[];shops=[];save(K.entries,entries);save(K.queue,queue);save(K.shops,shops);renderSettings();toast('Local data erased');}}
+ if(a==='pickshop')pickShop();
+}
+el('log-btn').addEventListener('click',function(){
+ if(cur.loc==='Coffee Shop'&&!cur.shop){toast('Pick which shop first');return;}
+ addEntry();
+});
+el('b-today').addEventListener('click',function(e){e.preventDefault();el('f-date').value=todayStr();});
+el('b-now').addEventListener('click',function(e){e.preventDefault();el('f-time').value=nowTime();});
+el('f-size-custom').addEventListener('input',function(){var v=parseFloat(this.value);if(!isNaN(v)){cur.size=v;document.querySelectorAll('#size-btns .sizebtn').forEach(function(b){b.classList.remove('sel');});updatePreview();}});
+el('f-coffee').addEventListener('input',coffeeSuggest);
+el('roi-slider').addEventListener('input',updateROI);
+document.querySelectorAll('#set-api,#set-home').forEach&&0;
+el('csv-file').addEventListener('change',function(){var f=this.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){importCSV(rd.result);};rd.readAsText(f);});
+
+function pickShop(){
+ var name=prompt('Coffee shop name:',cur.shop||'');if(name==null)return;name=name.trim();if(!name)return;
+ cur.shop=name;el('shop-val').textContent=name;
+ if(!shops.some(function(s){return s.name===name;})){
+   var city=prompt('City (optional):','')||'';var st=prompt('State (optional):','')||'';var web=prompt('Website (optional):','')||'';
+   shops.push({name:name,city:city.trim(),state:st.trim(),website:web.trim()});save(K.shops,shops);
+ }
+}
+el('find-shop').addEventListener('click',function(){
+ if(!navigator.geolocation){toast('Location not available');return;}
+ toast('Finding cafes near you…');
+ navigator.geolocation.getCurrentPosition(function(pos){
+   var lat=pos.coords.latitude,lon=pos.coords.longitude;var d=0.0045;
+   var q='[out:json][timeout:20];(node["amenity"="cafe"]('+(lat-d)+','+(lon-d)+','+(lat+d)+','+(lon+d)+');node["shop"="coffee"]('+(lat-d)+','+(lon-d)+','+(lat+d)+','+(lon+d)+'););out 20;';
+   fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:q})
+   .then(function(r){return r.json();}).then(function(res){
+     var found=(res.elements||[]).filter(function(x){return x.tags&&x.tags.name;});
+     if(!found.length){toast('No cafes found nearby');return;}
+     found.forEach(function(x){if(!shops.some(function(s){return s.name===x.tags.name;}))shops.push({name:x.tags.name,city:x.tags['addr:city']||'',state:x.tags['addr:state']||'',website:x.tags.website||''});});
+     save(K.shops,shops);renderShops();toast('Added '+found.length+' nearby cafes');
+   }).catch(function(){toast('Could not reach maps service');});
+ },function(){toast('Location permission denied');},{enableHighAccuracy:true,timeout:12000});
+});
+
+/* ---------- boot ---------- */
+setGears();renderTabs();renderLog();nav('log');updateROI();
+window.addEventListener('online',function(){if(settings.apiUrl&&queue.length)syncNow();});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
+</script>
+</body>
+</html>
