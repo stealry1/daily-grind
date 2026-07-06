@@ -297,7 +297,7 @@ function aggregate(list){
  list.forEach(function(e){
   a.oz+=(+e.sizeOz||0);
   a.caff+=(+e.caffeine||0);
-  if(e.location==='Coffee Shop')a.shopSpend+=(+e.price||0);
+  if(e.location==='Coffee Shop'&&(e.shop||'').toLowerCase()!=='starbucks')a.shopSpend+=(+e.price||0);
   else if(e.location==='Home'){a.homeSpend+=(+e.price||0);
     var sp=settings.shopPrice[e.method]||0;a.saved+=Math.max(0,sp-(+e.price||0));}
   a.byMethod[e.method]=(a.byMethod[e.method]||0)+1;
@@ -409,7 +409,7 @@ function renderROI(){
  var yr=new Date().getFullYear();
  var ylist=entries.filter(function(e){return new Date(e.ts||e.date).getFullYear()===yr;});
  var homeList=ylist.filter(function(e){return e.location==='Home';});
- var shopList=ylist.filter(function(e){return e.location==='Coffee Shop';});
+ var shopList=ylist.filter(function(e){return e.location==='Coffee Shop'&&(e.shop||'').toLowerCase()!=='starbucks';});
  var avgShop=shopList.length?shopList.reduce(function(s,e){return s+(+e.price||0);},0)/shopList.length:avgObj(settings.shopPrice);
  var homeCost=homeList.length?homeList.reduce(function(s,e){return s+(+e.price||0);},0)/homeList.length:(avgObj(settings.homePrice)||settings.homeCost);
  var start=new Date(yr,0,1),now=new Date();var days=Math.max(1,Math.round((now-start)/86400000)+1);
