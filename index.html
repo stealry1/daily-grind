@@ -269,7 +269,7 @@ var shops=load(K.shops,[]);
 var queue=load(K.queue,[]);
 
 /* ---------- current log form state ---------- */
-var cur={loc:'Home',method:settings.methods[0],origin:'Ethiopia',process:'Washed',size:12,shop:null};
+var cur={loc:'Home',method:settings.methods[0],origin:'Ethiopia',process:'Washed',size:2,shop:null};
 
 /* ---------- pure calc functions ---------- */
 function caffeineFor(method,oz){var per=settings.caffPerOz[method]||0;return Math.round(per*oz);}
@@ -477,13 +477,22 @@ function syncNow(cb){
  }).catch(function(){toast('Offline — queued for later');if(cb)cb(false);});
 }
 
+function normalizeEntry(e){
+ // Google Sheets may return date/time/ts as locale Date strings; rebuild clean ISO from ts
+ var base=e.ts||((e.date||'')+'T'+((e.time&&/^\d{1,2}:/.test(e.time))?e.time:'12:00'));
+ var d=new Date(base);
+ if(!isNaN(d.getTime())){var iso=d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());var tm=p2(d.getHours())+':'+p2(d.getMinutes());e.date=iso;e.time=tm;e.ts=iso+'T'+tm;}
+ else if(e.date){var dd=new Date(e.date);if(!isNaN(dd.getTime())){e.date=dd.getFullYear()+'-'+p2(dd.getMonth()+1)+'-'+p2(dd.getDate());e.ts=e.date+'T12:00';e.time='';}}
+ e.sizeOz=+e.sizeOz||0;e.price=+e.price||0;e.caffeine=+e.caffeine||0;
+ return e;
+}
 function pullFromSheet(){
  if(!settings.apiUrl){toast('Add your Sheet API URL first');return;}
  toast('Loading from sheet…');
  fetch(settings.apiUrl,{method:'GET'}).then(function(r){return r.json();}).then(function(res){
   if(!res||!res.ok){toast('Could not read sheet');return;}
   var have={};entries.forEach(function(e){have[e.id]=1;});
-  var added=0;(res.entries||[]).forEach(function(e){if(e.id&&!have[e.id]){entries.push(e);have[e.id]=1;added++;}});
+  var added=0;(res.entries||[]).forEach(function(e){if(e.id&&!have[e.id]){normalizeEntry(e);entries.push(e);have[e.id]=1;added++;}});
   entries.sort(function(a,b){return (a.ts||'').localeCompare(b.ts||'');});
   save(K.entries,entries);renderSettings();
   toast(added?('Loaded '+added+' from sheet'):'Already up to date');
