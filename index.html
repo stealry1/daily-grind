@@ -85,6 +85,13 @@ input::placeholder{color:var(--muted)}
   color:var(--muted);font-size:10.5px;border:none;background:transparent}
 .tab svg{width:26px;height:26px}
 .tab.active{color:var(--accent)}
+.navrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
+.navbtn{width:44px;height:44px;border-radius:22px;background:var(--card);color:var(--accent);border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.navbtn svg{width:22px;height:22px}
+.navbtn:active{opacity:.6}
+.navbtn[disabled]{opacity:.25}
+.navlabel{flex:1;background:transparent;border:none;color:var(--text);font-size:18px;font-weight:600;text-align:center;padding:10px 4px;display:flex;align-items:center;justify-content:center;gap:8px}
+.navlabel svg{width:16px;height:16px;color:var(--muted)}
 .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .metric{background:var(--card);border-radius:12px;padding:14px}
 .metric .lbl{font-size:13px;color:var(--text2)}
@@ -166,6 +173,12 @@ label.row{cursor:default}
         <button class="gear" data-nav="settings" aria-label="Settings"></button>
       </span></div>
     <div class="seg" id="range-seg" style="margin-bottom:14px"></div>
+    <div class="navrow" id="dash-nav">
+      <button class="navbtn" id="nav-prev" data-act="navprev" aria-label="Previous period"></button>
+      <button class="navlabel" id="nav-label" data-act="pickdate"></button>
+      <button class="navbtn" id="nav-next" data-act="navnext" aria-label="Next period"></button>
+    </div>
+    <input type="date" id="nav-date" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
     <div class="mgrid" id="dash-metrics"></div>
     <div class="sect">Spend</div>
     <div class="group" id="dash-spend" style="padding:6px 14px"></div>
@@ -252,7 +265,8 @@ var SI={
  chev:'<path d="M9 6l6 6-6 6"/>',
  store:'<path d="M4 9h16v11H4zM4 9l1.5-5h13L20 9M9 20v-6h6v6"/>',
  check:'<path d="M20 6 9 17l-5-5"/>',
- share:'<path d="M12 3v13"/><path d="M8.5 6.5 12 3l3.5 3.5"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/>'
+ share:'<path d="M12 3v13"/><path d="M8.5 6.5 12 3l3.5 3.5"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/>',
+ cal:'<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>'
 };
 function svg(n,extra){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" '+(extra||'')+'>'+SI[n]+'</svg>';}
 
@@ -291,11 +305,12 @@ function todayStr(){var d=new Date();return d.getFullYear()+'-'+p2(d.getMonth()+
 function nowTime(){var d=new Date();return p2(d.getHours())+':'+p2(d.getMinutes());}
 function p2(n){return (n<10?'0':'')+n;}
 
-function inRange(e,range){
- var now=new Date();var d=new Date(e.ts||(e.date+'T'+(e.time||'12:00')));
- if(range==='today')return d.toDateString()===now.toDateString();
- if(range==='month')return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
- if(range==='year')return d.getFullYear()===now.getFullYear();
+function inRange(e,range,ref){
+ ref=ref||new Date();var d=new Date(e.ts||(e.date+'T'+(e.time||'12:00')));
+ if(isNaN(d.getTime()))return false;
+ if(range==='today')return d.toDateString()===ref.toDateString();
+ if(range==='month')return d.getFullYear()===ref.getFullYear()&&d.getMonth()===ref.getMonth();
+ if(range==='year')return d.getFullYear()===ref.getFullYear();
  return true;
 }
 function aggregate(list){
@@ -371,15 +386,34 @@ function updatePreview(){
 
 /* DASHBOARD */
 var range='month';
+var refDate=new Date();
+function isFuturePeriod(d){var n=new Date();
+ if(range==='today'){return new Date(d.getFullYear(),d.getMonth(),d.getDate())>new Date(n.getFullYear(),n.getMonth(),n.getDate());}
+ if(range==='month'){return d.getFullYear()>n.getFullYear()||(d.getFullYear()===n.getFullYear()&&d.getMonth()>n.getMonth());}
+ return d.getFullYear()>n.getFullYear();}
+function periodDays(){var n=new Date();
+ if(range==='today')return 1;
+ if(range==='month'){if(refDate.getFullYear()===n.getFullYear()&&refDate.getMonth()===n.getMonth())return n.getDate();return new Date(refDate.getFullYear(),refDate.getMonth()+1,0).getDate();}
+ if(refDate.getFullYear()===n.getFullYear())return Math.max(1,Math.round((n-new Date(n.getFullYear(),0,1))/86400000)+1);
+ var y=refDate.getFullYear();return ((y%4===0&&y%100!==0)||y%400===0)?366:365;}
+function stepPeriod(dir){var d=new Date(refDate);
+ if(range==='today')d.setDate(d.getDate()+dir);else if(range==='month')d.setMonth(d.getMonth()+dir);else d.setFullYear(d.getFullYear()+dir);
+ if(dir>0&&isFuturePeriod(d))return;refDate=d;renderDash();}
+function openDatePicker(){var di=el('nav-date');di.value=refDate.getFullYear()+'-'+p2(refDate.getMonth()+1)+'-'+p2(refDate.getDate());di.max=todayStr();try{di.showPicker();}catch(e){di.focus();di.click();}}
 function renderDash(){
- el('range-seg').innerHTML=[['today','Today'],['month','Month'],['year','Year']].map(function(r){return '<button data-r="'+r[0]+'"'+(r[0]===range?' class="sel"':'')+'>'+r[1]+'</button>';}).join('');
- var list=entries.filter(function(e){return inRange(e,range);});
+ el('range-seg').innerHTML=[['today','Day'],['month','Month'],['year','Year']].map(function(r){return '<button data-r="'+r[0]+'"'+(r[0]===range?' class="sel"':'')+'>'+r[1]+'</button>';}).join('');
+ el('nav-prev').innerHTML=svg('chev','style="transform:rotate(180deg)"');
+ el('nav-next').innerHTML=svg('chev');
+ var navlbl=range==='today'?refDate.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric'}):(range==='month'?refDate.toLocaleDateString(undefined,{month:'long',year:'numeric'}):(''+refDate.getFullYear()));
+ el('nav-label').innerHTML='<span>'+navlbl+'</span>'+svg('cal');
+ var nd=new Date(refDate);if(range==='today')nd.setDate(nd.getDate()+1);else if(range==='month')nd.setMonth(nd.getMonth()+1);else nd.setFullYear(nd.getFullYear()+1);
+ el('nav-next').disabled=isFuturePeriod(nd);
+ var list=entries.filter(function(e){return inRange(e,range,refDate);});
  var a=aggregate(list);
- var perDayLabel=range==='today'?'today':(range==='month'?'this month':'this year');
- var days=range==='today'?1:(range==='month'?new Date().getDate():Math.max(1,Math.round((new Date()-new Date(new Date().getFullYear(),0,1))/86400000)+1));
+ var days=periodDays();
  var caffPerDay=days?Math.round(a.caff/days):0;
  el('dash-metrics').innerHTML=[
-  ['Coffees',a.count,perDayLabel],
+  ['Coffees',a.count,range==='today'?'logged':((Math.round(a.count/days*10)/10)+' / day')],
   ['Total ounces',Math.round(a.oz).toLocaleString(),'oz brewed'],
   ['Caffeine',caffPerDay.toLocaleString(),'mg / day avg'],
   ['Saved vs shop',fmt$0(a.saved),'brewing at home']
@@ -395,7 +429,7 @@ function renderDash(){
  var ts=timeStats(list),pace=paceStats();
  var rows='';
  if(ts){rows+=drow('Earliest',ts.earliest)+drow('Latest',ts.latest)+drow('Average time',ts.avg);}
- if(pace&&range==='year'){rows+=drow('Projected drinks',pace.projDrinks.toLocaleString())+drow('Projected spend',fmt$0(pace.projSpend));}
+ if(pace&&range==='year'&&refDate.getFullYear()===new Date().getFullYear()){rows+=drow('Projected drinks',pace.projDrinks.toLocaleString())+drow('Projected spend',fmt$0(pace.projSpend));}
  el('dash-timing').innerHTML=rows||'<div class="empty" style="padding:16px">Log coffees to see timing</div>';
  if(!entries.length)el('dash-metrics').insertAdjacentHTML('beforebegin','');
 }
@@ -584,21 +618,23 @@ function handleAct(a){
  if(a==='wipe'){if(confirm('Erase all coffees stored on this device? Your Google Sheet (if connected) is not affected.')){entries=[];queue=[];shops=[];save(K.entries,entries);save(K.queue,queue);save(K.shops,shops);renderSettings();toast('Local data erased');}}
  if(a==='pickshop')pickShop();
  if(a==='share')shareDashboard();
+ if(a==='navprev')stepPeriod(-1);
+ if(a==='navnext')stepPeriod(1);
+ if(a==='pickdate')openDatePicker();
 }
 
 /* ---------- share as image (1080x1920 for TikTok/Instagram) ---------- */
 var shareIcon=new Image(); shareIcon.src='icon-512.png';
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 function shareDashboard(){
- var list=entries.filter(function(e){return inRange(e,range);});
+ var list=entries.filter(function(e){return inRange(e,range,refDate);});
  var a=aggregate(list);
- var now=new Date();
- var days=range==='today'?1:(range==='month'?now.getDate():Math.max(1,Math.round((now-new Date(now.getFullYear(),0,1))/86400000)+1));
+ var days=periodDays();
  var caffPerDay=days?Math.round(a.caff/days):0;
  var ts=timeStats(list);
  var mk=Object.keys(a.byMethod).sort(function(x,y){return a.byMethod[y]-a.byMethod[x];}).slice(0,3);
- var rangeLabel=range==='today'?'Today':(range==='month'?'This month':'This year');
- var sub=range==='today'?now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}):(range==='month'?now.toLocaleDateString(undefined,{month:'long',year:'numeric'}):(''+now.getFullYear()));
+ var rangeLabel=range==='today'?refDate.toLocaleDateString(undefined,{weekday:'long'}):(range==='month'?refDate.toLocaleDateString(undefined,{month:'long'}):(''+refDate.getFullYear()));
+ var sub=range==='today'?refDate.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}):(range==='month'?(''+refDate.getFullYear()):'my year in coffee');
  var W=1080,H=1920,cv=document.createElement('canvas');cv.width=W;cv.height=H;var c=cv.getContext('2d');
  var g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#3a2618');g.addColorStop(1,'#1c120a');c.fillStyle=g;c.fillRect(0,0,W,H);
  var cream='#f3e7d6',mut='#c3a888',acc='#cf9d72';
@@ -643,6 +679,7 @@ el('f-size-custom').addEventListener('input',function(){var v=parseFloat(this.va
 el('roi-slider').addEventListener('input',updateROI);
 document.querySelectorAll('#set-api,#set-home').forEach&&0;
 el('csv-file').addEventListener('change',function(){var f=this.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){importCSV(rd.result);};rd.readAsText(f);});
+el('nav-date').addEventListener('change',function(){if(this.value){var p=this.value.split('-');refDate=new Date(+p[0],+p[1]-1,+p[2],12,0);renderDash();}});
 
 function pickShop(){
  var name=prompt('Coffee shop name:',cur.shop||'');if(name==null)return;name=name.trim();if(!name)return;
