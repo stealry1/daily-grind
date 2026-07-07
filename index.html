@@ -609,9 +609,9 @@ function shareDashboard(){
  c.fillStyle=cream;c.font="800 300px "+FS;c.fillText(String(a.count),W/2,660);
  c.fillStyle=mut;c.font="500 52px "+FS;c.fillText(a.count===1?'coffee':'coffees',W/2,740);
  // tiles 2x2
- var tiles=[['Total ounces',Math.round(a.oz).toLocaleString()+' oz'],['Caffeine',caffPerDay.toLocaleString()+' mg/day'],['Spent at shops',fmt$0(a.shopSpend)],['Saved at home',fmt$0(a.saved)]];
+ var tiles=[['Total ounces',Math.round(a.oz).toLocaleString()+' oz'],['Caffeine / day',caffPerDay.toLocaleString()+' mg'],['Spent at shops',fmt$0(a.shopSpend)],['Saved at home',fmt$0(a.saved)]];
  var TW=440,TH=210,gx=40,x0=80,y0=830;
- tiles.forEach(function(t,i){var col=i%2,row=Math.floor(i/2);var x=x0+col*(TW+gx),y=y0+row*(TH+gx);c.fillStyle='rgba(243,231,214,0.06)';rr(c,x,y,TW,TH,30);c.fill();c.textAlign='left';c.fillStyle=mut;c.font="500 34px "+FS;c.fillText(t[0],x+36,y+66);c.fillStyle=cream;c.font="700 76px "+FS;c.fillText(t[1],x+36,y+156);});
+ tiles.forEach(function(t,i){var col=i%2,row=Math.floor(i/2);var x=x0+col*(TW+gx),y=y0+row*(TH+gx);c.fillStyle='rgba(243,231,214,0.06)';rr(c,x,y,TW,TH,30);c.fill();c.textAlign='left';c.fillStyle=mut;c.font="500 34px "+FS;c.fillText(t[0],x+36,y+66);c.fillStyle=cream;var vs=76;c.font='700 '+vs+'px '+FS;while(c.measureText(t[1]).width>TW-64&&vs>40){vs-=4;c.font='700 '+vs+'px '+FS;}c.fillText(t[1],x+36,y+156);});
  // methods
  var my=y0+2*TH+2*gx+90;
  if(mk.length){c.textAlign='left';c.fillStyle=acc;c.font="600 34px "+FS;c.fillText('TOP METHODS',80,my);var yy=my+66;mk.forEach(function(m){var pct=Math.round(a.byMethod[m]/a.count*100);c.fillStyle=cream;c.font="500 44px "+FS;c.textAlign='left';c.fillText(m,80,yy);c.fillStyle=mut;c.textAlign='right';c.fillText(pct+'%',W-80,yy);yy+=68;});}
