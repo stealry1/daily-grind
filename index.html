@@ -91,7 +91,7 @@ input::placeholder{color:var(--muted)}
 .metric .num{font-size:25px;font-weight:700;margin-top:3px}
 .metric .sub{font-size:12px;color:var(--muted);margin-top:2px}
 .brow{display:flex;align-items:center;gap:10px;margin:11px 0}
-.brow .bn{width:82px;font-size:14px;color:var(--text2);flex-shrink:0}
+.brow .bn{width:116px;font-size:14px;color:var(--text2);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btrack{flex:1;height:9px;background:var(--accentSoft);border-radius:5px;overflow:hidden}
 .bfill{height:100%;background:var(--accent);border-radius:5px}
 .brow .bp{width:44px;text-align:right;font-size:14px;color:var(--muted)}
@@ -171,6 +171,8 @@ label.row{cursor:default}
     <div class="group" id="dash-spend" style="padding:6px 14px"></div>
     <div class="sect">By method</div>
     <div class="group" id="dash-methods" style="padding:8px 14px"></div>
+    <div class="sect">By origin</div>
+    <div class="group" id="dash-origins" style="padding:8px 14px"></div>
     <div class="sect">Timing &amp; pace</div>
     <div class="group" id="dash-timing"></div>
   </section>
@@ -297,7 +299,7 @@ function inRange(e,range){
  return true;
 }
 function aggregate(list){
- var a={count:list.length,oz:0,caff:0,shopSpend:0,homeSpend:0,saved:0,byMethod:{},times:[]};
+ var a={count:list.length,oz:0,caff:0,shopSpend:0,homeSpend:0,saved:0,byMethod:{},byOrigin:{},times:[]};
  list.forEach(function(e){
   a.oz+=(+e.sizeOz||0);
   a.caff+=(+e.caffeine||0);
@@ -305,6 +307,7 @@ function aggregate(list){
   else if(e.location==='Home'){a.homeSpend+=(+e.price||0);
     var sp=settings.shopPrice[e.method]||0;a.saved+=Math.max(0,sp-(+e.price||0));}
   a.byMethod[e.method]=(a.byMethod[e.method]||0)+1;
+  if(e.origin)a.byOrigin[e.origin]=(a.byOrigin[e.origin]||0)+1;
   if(e.time){var pp=e.time.split(':');a.times.push((+pp[0])*60+(+pp[1]));}
  });
  return a;
@@ -387,6 +390,8 @@ function renderDash(){
   bar('Home',a.homeSpend/tot*100,fmt$0(a.homeSpend));
  var mk=Object.keys(a.byMethod).sort(function(x,y){return a.byMethod[y]-a.byMethod[x];});
  el('dash-methods').innerHTML=mk.length?mk.map(function(m){var pct=Math.round(a.byMethod[m]/a.count*100);return bar(m,pct,pct+'%');}).join(''):'<div class="empty" style="padding:16px">No coffees yet</div>';
+ var ok=Object.keys(a.byOrigin).sort(function(x,y){return a.byOrigin[y]-a.byOrigin[x];});
+ el('dash-origins').innerHTML=ok.length?ok.map(function(o){var pct=Math.round(a.byOrigin[o]/a.count*100);return bar(o,pct,pct+'%');}).join(''):'<div class="empty" style="padding:16px">No coffees yet</div>';
  var ts=timeStats(list),pace=paceStats();
  var rows='';
  if(ts){rows+=drow('Earliest',ts.earliest)+drow('Latest',ts.latest)+drow('Average time',ts.avg);}
